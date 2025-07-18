@@ -1,26 +1,44 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'python:3.11'
+            args '-u root:root'
+        }
+    }
 
     environment {
-        DJANGO_SETTINGS_MODULE = "backend.settings"
+        VENV_DIR = "venv"
     }
 
     stages {
         stage('Install Dependencies') {
             steps {
-                sh 'pip install -r backend/requirements.txt'
+                sh '''
+                    python -m venv $VENV_DIR
+                    source $VENV_DIR/bin/activate
+                    pip install --upgrade pip
+                    pip install -r backend/requirements.txt
+                '''
             }
         }
 
         stage('Run Django Checks') {
             steps {
-                sh 'python backend/manage.py check'
+                sh '''
+                    source $VENV_DIR/bin/activate
+                    cd backend
+                    python manage.py check
+                '''
             }
         }
 
         stage('Run Tests') {
             steps {
-                sh 'python backend/manage.py test'
+                sh '''
+                    source $VENV_DIR/bin/activate
+                    cd backend
+                    python manage.py test
+                '''
             }
         }
     }
